@@ -1,0 +1,5 @@
+pio.log
+target/
+predictionio/
+spark/
+elasticsearch/
