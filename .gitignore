@@ -3,3 +3,4 @@ target/
 predictionio/
 spark/
 elasticsearch/
+templates/

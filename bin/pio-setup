@@ -10,6 +10,7 @@ PIO_HOME=$BASE_DIR/predictionio
 SPARK_HOME=$BASE_DIR/spark
 ES_HOME=$BASE_DIR/elasticsearch
 TARGET_DIR=$BASE_DIR/target
+TEMPLATE_DIR=$BASE_DIR/templates
 
 DEFAULT_SCALA_VERSION=2.11.8
 DEFAULT_SPARK_VERSION=2.1.1
@@ -229,6 +230,47 @@ status_pio() {
   $PIO_HOME/bin/pio status
 }
 
+template_get() {
+  mkdir -p $TEMPLATE_DIR
+  cd $TEMPLATE_DIR
+
+  if [ x"$2" = "x" ] ; then
+    GIT_USERS="apache jpioug"
+    GIT_REPOS="$1 predictionio-template-$1 predictionio-$1 incubator-predictionio-template-$1 incubator-predictionio-$1 incubator-$1"
+  else
+    GIT_USERS="$1"
+    GIT_REPOS="$2 predictionio-template-$2 predictionio-$2 incubator-predictionio-template-$2 incubator-predictionio-$2 incubator-$2"
+    if [ x"$3" != "x" ] ; then
+      GIT_BRANCH=$3
+    fi
+  fi
+
+  GIT_FOUND=0
+  for user in `echo $GIT_USERS` ; do
+    for repo in `echo $GIT_REPOS` ; do
+      echo "Accessing to https://github.com/$user/${repo}..."
+      HTTP_STATUS=`curl -LI -o /dev/null -w '%{http_code}' -s https://github.com/$user/$repo`
+      if [ x"$HTTP_STATUS" = x200 ] ; then
+        echo "Cloning https://github.com/$user/${repo}..."
+        git clone https://github.com/$user/$repo.git
+        GIT_FOUND=1
+        break
+      fi
+    done
+  done
+
+  if [ $GIT_FOUND = 0 ] ; then
+    echo "Git repositories are not found."
+    exit 1
+  fi
+
+  if [ x"$GIT_BRANCH" != "x" ] ; then
+    cd $repo
+    echo "Changing branch to ${GIT_BRANCH}..."
+    git checkout -b $GIT_BRANCH origin/$GIT_BRANCH
+  fi
+}
+
 case "$1" in
   start)
     start_pio
@@ -245,6 +287,20 @@ case "$1" in
   clean)
     stop_pio
     clean_all
+    ;;
+  template)
+    shift
+    echo $1
+    case "$1" in
+      get)
+        shift
+        template_get $@
+        ;;
+      *)
+        echo "Usage: $SCRIPTNAME template {get|build|train|deploy}" >&2
+        exit 3
+        ;;
+    esac
     ;;
   *)
     echo "Usage: $SCRIPTNAME {start|stop|status|deploy|clean}" >&2
