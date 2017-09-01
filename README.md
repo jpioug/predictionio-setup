@@ -44,3 +44,22 @@ Remove all deployed directories:
 
 target, predictionio, spark and elasticsearch directories are removed.
 
+## Details
+
+### Storage Repositories
+
+The following repositories are used:
+
+* Meta Data: Elasticsearch
+* Event Data: Elasticsearch
+* Model Data: Local FS
+
+### Directory Structure
+
+This project contains the following directories:
+
+* bin: Executable files
+* predictionio: PredictionIO
+* spark: Spark
+* elasticsearch: Elasticsearch
+* target: Temporary files
