@@ -17,11 +17,14 @@ DEFAULT_SPARK_VERSION=2.1.1
 DEFAULT_HADOOP_VERSION=2.6.5
 DEFAULT_ELASTICSEARCH_VERSION=5.5.2
 DEFAULT_PIO_GIT_USER=jpioug
-DEFAULT_PIO_GIT_BRANCH=pyspark
+DEFAULT_PIO_GIT_BRANCH=pio_setup
 
+PIO_CMD=$PIO_HOME/bin/pio
 PIO_PID_FILE=$PIO_HOME/pid.txt
 ES_PID_FILE=$ES_HOME/pid.txt
+PREDICT_PID_FILE=predict_pid.txt
 LOG_FILE=$TARGET_DIR/pio-setup.log
+IMPORT_PY_FILE=data/import_eventserver.py
 
 setup_all() {
   if [ x"$SCALA_VERSION" = x ] ; then
@@ -184,10 +187,10 @@ start_pio() {
   export PIO_HOME
   export ES_HOME
   if [ -f $ES_PID_FILE ] ; then
-    kill `cat $ES_PID_FILE`
+    kill `cat $ES_PID_FILE` >/dev/null 2>&1
   fi
   if [ -f $PIO_PID_FILE ] ; then
-    kill `cat $PIO_PID_FILE`
+    kill `cat $PIO_PID_FILE` >/dev/null 2>&1
   fi
   mkdir -p $TARGET_DIR
 
@@ -202,7 +205,7 @@ start_pio() {
     ret=$?
   done
 
-  $PIO_HOME/bin/pio eventserver >> $LOG_FILE 2>&1 &
+  $PIO_CMD eventserver >> $LOG_FILE 2>&1 &
   echo $! > $PIO_PID_FILE
   echo "Started PredictionIO"
 }
@@ -211,13 +214,13 @@ stop_pio() {
   export PIO_HOME
   export ES_HOME
   if [ -f $PIO_PID_FILE ] ; then
-    kill `cat $PIO_PID_FILE`
+    kill `cat $PIO_PID_FILE` >/dev/null 2>&1
     echo "Stopped PredictionIO"
   fi
   rm -f $PIO_PID_FILE
   if [ -f $ES_PID_FILE ] ; then
     curl -s -XPOST 'localhost:9200/_flush?wait_if_ongoing=true' >> $LOG_FILE
-    kill `cat $ES_PID_FILE`
+    kill `cat $ES_PID_FILE` >/dev/null 2>&1
     echo "Stopped Elasticsearch"
   fi
   rm -f $ES_PID_FILE
@@ -227,7 +230,7 @@ status_pio() {
   export PIO_HOME
   export ES_HOME
   echo "Checking PredictionIO Status..."
-  $PIO_HOME/bin/pio status
+  $PIO_CMD status
 }
 
 template_get() {
@@ -251,6 +254,10 @@ template_get() {
       echo "Accessing to https://github.com/$user/${repo}..."
       HTTP_STATUS=`curl -LI -o /dev/null -w '%{http_code}' -s https://github.com/$user/$repo`
       if [ x"$HTTP_STATUS" = x200 ] ; then
+        if [ -d "$repo" ] ; then
+          echo "$repo exists."
+          exit 1
+        fi
         echo "Cloning https://github.com/$user/${repo}..."
         git clone https://github.com/$user/$repo.git
         GIT_FOUND=1
@@ -269,6 +276,99 @@ template_get() {
     echo "Changing branch to ${GIT_BRANCH}..."
     git checkout -b $GIT_BRANCH origin/$GIT_BRANCH
   fi
+}
+
+template_lookup() {
+  TEMPLATE_NAMES="$1 predictionio-template-$1 predictionio-$1 incubator-predictionio-template-$1 incubator-predictionio-$1 incubator-$1"
+  for name in $TEMPLATE_NAMES ; do
+    TEMPLATE_PATH=$TEMPLATE_DIR/$name
+    ls "$TEMPLATE_PATH" > /dev/null 2>&1
+    if [ $? = 0 ] ; then
+      echo "$name"
+      return
+    fi
+  done
+  echo "Template directory is not found."
+  exit 1
+}
+
+template_init() {
+  TEMPLATE_NAME=`template_lookup $1`
+  cd $TEMPLATE_DIR/$TEMPLATE_NAME
+
+  APP_NAME=`grep \"appName\" engine.json | head -n1 | sed -e "s/.*appName\".*:.*\"\([^\"]*\)\".*/\1/"`
+  if [ x"$APP_NAME" = "x" ] ; then
+    APP_NAME=`echo $TEMPLATE_NAME | sed -e "s/.*template-//"`
+  elif [ x"$APP_NAME" = "xINVALID_APP_NAME" ] ; then
+    APP_NAME=`echo $TEMPLATE_NAME | sed -e "s/.*template-//"`
+    replace_line "s/INVALID_APP_NAME/$APP_NAME/" engine.json
+  fi
+
+  echo "Registering ${APP_NAME} app..."
+  $PIO_CMD app new $APP_NAME
+}
+
+template_accesskey() {
+  APP_NAME=`grep \"appName\" engine.json | head -n1 | sed -e "s/.*appName\".*:.*\"\([^\"]*\)\".*/\1/"`
+  $PIO_CMD app show $APP_NAME | grep "Access Key" | sed -e "s/.*Access Key: \(.*\) \|.*/\1/"
+}
+
+template_build() {
+  TEMPLATE_NAME=`template_lookup $1`
+  cd $TEMPLATE_DIR/$TEMPLATE_NAME
+
+  echo "Building ${TEMPLATE_NAME}..."
+  $PIO_CMD build
+}
+
+template_train() {
+  TEMPLATE_NAME=`template_lookup $1`
+  cd $TEMPLATE_DIR/$TEMPLATE_NAME
+
+  if [ -f train.py ] ; then
+    PY_OPT="--main-py-file train.py"
+  fi
+
+  echo "Training ${TEMPLATE_NAME}..."
+  $PIO_CMD train $PY_OPT
+}
+
+template_deploy() {
+  TEMPLATE_NAME=`template_lookup $1`
+  cd $TEMPLATE_DIR/$TEMPLATE_NAME
+
+  if [ -f $PREDICT_PID_FILE ] ; then
+    kill `cat $PREDICT_PID_FILE` >/dev/null 2>&1
+  fi
+  echo "Deploying ${TEMPLATE_NAME}..."
+  $PIO_CMD deploy >> $LOG_FILE 2>&1 &
+  echo $! > $PREDICT_PID_FILE
+}
+
+template_undeploy() {
+  TEMPLATE_NAME=`template_lookup $1`
+  cd $TEMPLATE_DIR/$TEMPLATE_NAME
+
+  echo "Undeploying ${TEMPLATE_NAME}..."
+  if [ -f $PREDICT_PID_FILE ] ; then
+    kill `cat $PREDICT_PID_FILE` >/dev/null 2>&1
+  fi
+  rm -f $PIO_PID_FILE
+}
+
+template_import() {
+  TEMPLATE_NAME=`template_lookup $1`
+  cd $TEMPLATE_DIR/$TEMPLATE_NAME
+
+  ACCESS_KEY=`template_accesskey`
+  grep "access-key" $IMPORT_PY_FILE >/dev/null 2>&1
+  if [ $? = 0 ] ; then
+    ACCESS_KEY_OPT="--access-key $ACCESS_KEY"
+  else
+    ACCESS_KEY_OPT="--access_key $ACCESS_KEY"
+  fi
+  echo "Importing data from ${TEMPLATE_NAME}..."
+  python $IMPORT_PY_FILE $ACCESS_KEY_OPT
 }
 
 case "$1" in
@@ -290,14 +390,37 @@ case "$1" in
     ;;
   template)
     shift
-    echo $1
     case "$1" in
       get)
         shift
         template_get $@
         ;;
+      init)
+        shift
+        template_init $@
+        ;;
+      import)
+        shift
+        template_import $@
+        ;;
+      build)
+        shift
+        template_build $@
+        ;;
+      train)
+        shift
+        template_train $@
+        ;;
+      deploy)
+        shift
+        template_deploy $@
+        ;;
+      undeploy)
+        shift
+        template_undeploy $@
+        ;;
       *)
-        echo "Usage: $SCRIPTNAME template {get|build|train|deploy}" >&2
+        echo "Usage: $SCRIPTNAME template {get|build|train|deploy|undeploy}" >&2
         exit 3
         ;;
     esac
