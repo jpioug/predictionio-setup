@@ -83,7 +83,7 @@ import sub-command invokes Python script to import training data.
 ### Build Template
 
 build sub-command run `pio build` to compile Template.
-(Note: for recommender template, you need to put `scalaVersion := "2.11.0"` to build.sbt)
+(Note: for recommender template, you need to put `scalaVersion := "2.11.0"` to build.sbt, and also uncomment `sc.setCheckpointDir("checkpoint")` in ALSAlgorithm.scala if StackOverflowException occurs)
 
 ```
 ./bin/pio-setup template build recommender
@@ -103,6 +103,12 @@ To launch predict API, run deploy sub-command:
 
 ```
 ./bin/pio-setup template deploy recommender
+```
+
+For recommender template, to check predict API response, send the following request:
+
+```
+curl -H "Content-Type: application/json" -d '{ "user": "1", "num": 4 }' http://localhost:8000/queries.json
 ```
 
 ### Undeploy Predict API
@@ -133,3 +139,4 @@ This project contains the following directories:
 * spark: Spark
 * elasticsearch: Elasticsearch
 * target: Temporary files
+* templates: Template Repositories
