@@ -353,7 +353,7 @@ template_undeploy() {
   if [ -f $PREDICT_PID_FILE ] ; then
     kill `cat $PREDICT_PID_FILE` >/dev/null 2>&1
   fi
-  rm -f $PIO_PID_FILE
+  rm -f $PREDICT_PID_FILE
 }
 
 template_import() {
