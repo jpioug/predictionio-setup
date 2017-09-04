@@ -201,6 +201,10 @@ start_pio() {
   ret=7
   while [ $ret = 7 ] ; do
     sleep 1
+    if ! ps -p `cat $ES_PID_FILE` > /dev/null ; then
+      echo "Failed to start Elasticsearch"
+      exit 1
+    fi
     curl -s -XGET 'localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s' >> $LOG_FILE
     ret=$?
   done
