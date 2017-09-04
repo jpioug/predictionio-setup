@@ -179,6 +179,7 @@ setup_es() {
   echo 'http.cors.enabled: true' >> $ES_CONF_FILE
   echo 'http.cors.allow-origin: "*"' >> $ES_CONF_FILE
   echo 'network.host: "0"' >> $ES_CONF_FILE
+  echo 'discovery.type: "single-node"' >> $ES_CONF_FILE
 
   echo "Deployed Elasticsearch"
 }
