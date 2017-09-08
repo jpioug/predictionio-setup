@@ -318,7 +318,7 @@ template_init() {
 
 template_accesskey() {
   APP_NAME=`grep \"appName\" engine.json | head -n1 | sed -e "s/.*appName\".*:.*\"\([^\"]*\)\".*/\1/"`
-  $PIO_CMD app show $APP_NAME | grep "Access Key" | sed -e "s/.*Access Key: \(.*\) \|.*/\1/"
+  $PIO_CMD app show $APP_NAME | grep "Access Key" | sed -e "s/.*Access Key: \(.*\) |.*/\1/"
 }
 
 template_build() {
