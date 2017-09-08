@@ -32,7 +32,8 @@ script:
   - bash ./bin/pio-setup template build iris
   - bash ./bin/pio-setup template train iris
   - bash ./bin/pio-setup template deploy iris
-  - sleep 10
+  - sleep 15
+  - cat ./target/pio-setup.log
   - bash -x ./tests/rest_api.sh
   - bash ./bin/pio-setup template undeploy iris
 
