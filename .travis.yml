@@ -1,0 +1,38 @@
+sudo: required
+
+language: python
+
+jdk:
+  - oraclejdk8
+
+python:
+  - 2.7
+  - 3.6
+
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot
+    - $HOME/.sbt/launchers
+
+install:
+  - pip install predictionio
+
+before_script:
+  - java -version
+
+script:
+  - bash ./bin/pio-setup deploy
+  - export PATH=$PATH:$PWD/predictionio/bin
+  - bash ./bin/pio-setup start
+  - bash ./bin/pio-setup status
+  - bash ./bin/pio-setup template get iris
+  - bash ./bin/pio-setup template init iris
+  - bash ./bin/pio-setup template import iris
+  - bash ./bin/pio-setup template build iris
+  - bash ./bin/pio-setup template train iris
+  - bash ./bin/pio-setup template deploy iris
+  - sleep 10
+  - curl -s -H "Content-Type: application/json" -d '{"attr0":5.1,"attr1":3.5,"attr2":1.4,"attr3":0.2}' http://localhost:8000/queries.json
+  - bash ./bin/pio-setup template undeploy iris
+
