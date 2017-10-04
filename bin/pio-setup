@@ -15,7 +15,7 @@ TEMPLATE_DIR=$BASE_DIR/templates
 DEFAULT_SCALA_VERSION=2.11.8
 DEFAULT_SPARK_VERSION=2.1.1
 DEFAULT_HADOOP_VERSION=2.6.5
-DEFAULT_ELASTICSEARCH_VERSION=5.5.2
+DEFAULT_ELASTICSEARCH_VERSION=5.5.3
 DEFAULT_PIO_GIT_USER=jpioug
 DEFAULT_PIO_GIT_BRANCH=pio_setup
 
@@ -92,7 +92,8 @@ setup_pio() {
     -Dscala.version=$SCALA_VERSION \
     -Dspark.version=$SPARK_VERSION \
     -Dhadoop.version=$HADOOP_VERSION \
-    -Delasticsearch.version=$ELASTICSEARCH_VERSION
+    -Delasticsearch.version=$ELASTICSEARCH_VERSION \
+    $PIO_MAKE_OPTS
   if [ $? != 0 ] ; then
     echo "Build Failed!"
     exit 1
