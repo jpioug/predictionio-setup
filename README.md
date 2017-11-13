@@ -256,3 +256,17 @@ To stop Predict API, run undeploy sub-command:
 ```
 ./bin/pio-setup template undeploy iris
 ```
+
+## Others
+
+### Build Docker Image
+
+```
+docker build --rm -t jpioug/pio-setup
+```
+
+### Run Docker Instance
+
+```
+docker-compose up --abort-on-container-exit
+```
