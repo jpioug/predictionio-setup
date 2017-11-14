@@ -28,6 +28,7 @@ services:
     ports:
       - 7070:7070
       - 8000:8000
+      - 8888:8888
     networks:
       - esnet
 

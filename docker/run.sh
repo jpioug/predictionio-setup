@@ -15,12 +15,13 @@ while [ $RET != 0 -a $COUNT -lt 10 ] ; do
 done
 
 # Check PIO status
-pio status
+sudo -i -u $PIO_USER /opt/predictionio/bin/pio status
+# Start PIO Event Server
+sudo -i -u $PIO_USER /opt/predictionio/bin/pio eventserver &
 
 if [ -f /work/run.sh ] ; then
   /bin/bash /work/run.sh
 else
   echo "No run script."
-  /bin/bash
 fi
 
