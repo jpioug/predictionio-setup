@@ -19,7 +19,7 @@
 #
 
 if [ -f /work/.pio-env.sh ] ; then
-  . /work/pio-env.sh
+  . /work/.pio-env.sh
 else
   . /opt/predictionio/conf/pio-default.sh
 fi
