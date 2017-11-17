@@ -262,7 +262,7 @@ To stop Predict API, run undeploy sub-command:
 ### Build Docker Image
 
 ```
-docker build --rm -t jpioug/pio-setup
+docker build --rm -t jpioug/pio-setup .
 ```
 
 ### Run Docker Instance

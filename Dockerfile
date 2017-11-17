@@ -8,7 +8,7 @@ ENV PIO_USER predictionio
 RUN apt-get update && apt-get install -y sudo libgfortran3 liblapack3 && \
     apt-get clean
 RUN groupadd -g 1000 $PIO_USER && \
-    useradd -g $PIO_USER -G sudo -m -s /bin/bash $PIO_USER && \
+    useradd -g $PIO_USER -G sudo -m -s /bin/bash $PIO_USER -d /work && \
     echo "$PIO_USER:$PIO_USER" | chpasswd
 
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
@@ -21,6 +21,7 @@ ADD docker/run.sh /opt/bin/run.sh
 ADD spark /opt/spark
 ADD predictionio /opt/predictionio
 RUN mv /opt/predictionio/conf/pio-env.sh $PIO_DEFAULT_CONF
+RUN sed -i "s/^PIO_FS_BASEDIR=.*/PIO_FS_BASEDIR=\/work\/.pio_store/" $PIO_DEFAULT_CONF
 RUN sed -i "s/^PIO_STORAGE_SOURCES_ELASTICSEARCH_HOSTS=.*/PIO_STORAGE_SOURCES_ELASTICSEARCH_HOSTS=elasticsearch1/" $PIO_DEFAULT_CONF
 RUN sed -i "s/^PIO_STORAGE_SOURCES_ELASTICSEARCH_HOME=.*/PIO_STORAGE_SOURCES_ELASTICSEARCH_HOME=/" $PIO_DEFAULT_CONF
 RUN sed -i "s/^SPARK_HOME=.*/SPARK_HOME=\/opt\/spark/" $PIO_DEFAULT_CONF
