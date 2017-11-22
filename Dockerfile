@@ -28,7 +28,9 @@ RUN sed -i "s/^SPARK_HOME=.*/SPARK_HOME=\/opt\/spark/" $PIO_DEFAULT_CONF
 ADD docker/pio-env.sh /opt/predictionio/conf/pio-env.sh
 RUN chown -R $PIO_USER /opt/predictionio /opt/spark
 
-RUN /opt/conda/bin/pip install predictionio
+RUN /opt/conda/bin/pip install numpy==1.13.3
+RUN /opt/conda/bin/pip install pandas==0.21.0
+RUN /opt/conda/bin/pip install predictionio==0.9.9
 
 ENV PATH /opt/bin:/opt/conda/bin:/opt/predictionio/bin:/opt/spark/bin:$PATH
 

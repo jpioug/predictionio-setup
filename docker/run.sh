@@ -8,7 +8,7 @@ ES_HOST=`echo $PIO_STORAGE_SOURCES_ELASTICSEARCH_HOSTS | sed -e "s/,.*//"`
 # Wait for elasticsearch startup
 while [ $RET != 0 -a $COUNT -lt 10 ] ; do
   echo "[PIO-SETUP] Waiting for ${ES_HOST}..."
-  curl --connect-timeout 60 --retry 10 -s "$ES_HOST:9200/_cluster/health?wait_for_status=yellow&timeout=1m"
+  curl --connect-timeout 60 --retry 10 -s "$ES_HOST:9200/_cluster/health?wait_for_status=green&timeout=1m"
   RET=$?
   COUNT=`expr $COUNT + 1`
   sleep 1
@@ -22,9 +22,12 @@ if [ -f $RUN_FILE ] ; then
   if [ x"$USERID" != "x" -a x"$USERID" != "x0" ] ; then
     echo "[PIO-SETUP] Updating uid for $PIO_USER to $USERID"
     usermod -u $USERID $PIO_USER
-    echo "[PIO-SETUP] User Info: "`id $PIO_USER`
-    chown -R $PIO_USER /opt/predictionio /opt/spark
+  else
+    export PIO_USER=root
   fi
+
+  echo "[PIO-SETUP] User Info: "`id $PIO_USER`
+  chown -R $PIO_USER /opt/predictionio /opt/spark
 
   # Check PIO status
   sudo -i -u $PIO_USER /opt/predictionio/bin/pio status
