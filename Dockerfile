@@ -1,6 +1,6 @@
 FROM java:8
 
-MAINTAINER CodeLibs Project
+MAINTAINER Japan PredictionIO User Group
 
 ENV PIO_DEFAULT_CONF /opt/predictionio/conf/pio-default.sh
 ENV PIO_USER predictionio
