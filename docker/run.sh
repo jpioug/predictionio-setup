@@ -6,7 +6,7 @@ RET=-1
 COUNT=0
 ES_HOST=`echo $PIO_STORAGE_SOURCES_ELASTICSEARCH_HOSTS | sed -e "s/,.*//"`
 # Wait for elasticsearch startup
-while [ $RET != 0 -a $COUNT -lt 10 ] ; do
+while [ $RET != 0 -a $COUNT -lt 60 ] ; do
   echo "[PIO-SETUP] Waiting for ${ES_HOST}..."
   curl --connect-timeout 60 --retry 10 -s "$ES_HOST:9200/_cluster/health?wait_for_status=green&timeout=1m"
   RET=$?
@@ -31,6 +31,9 @@ if [ -f $RUN_FILE ] ; then
 
   # Check PIO status
   sudo -i -u $PIO_USER /opt/predictionio/bin/pio status
+  if [ $? != 0 ] ; then
+    echo "[PIO-SETUP] PredictionIO is not available."
+  fi
   # Start PIO Event Server
   sudo -i -u $PIO_USER /opt/predictionio/bin/pio eventserver &
 
